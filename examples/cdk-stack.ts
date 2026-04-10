@@ -1,4 +1,4 @@
-import {router} from "#src/api"
+import {router} from "#src/router"
 import {RestApi} from "aws-cdk-lib/aws-apigateway"
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs"
 import {Stack, type StackProps} from "aws-cdk-lib/core"

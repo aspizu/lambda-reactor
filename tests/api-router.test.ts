@@ -40,7 +40,7 @@ describe("router defineRestApi", () => {
     })
 
     it("defines nested rest resources on an existing api instance", async () => {
-        const {router} = await import("#src/api")
+        const {router} = await import("#src/router")
         const root = new FakeResource()
         const api = {root} as unknown as IRestApi
         const getUser = {name: "getUser"} as unknown as IFunction

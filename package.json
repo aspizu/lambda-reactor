@@ -6,7 +6,8 @@
         "check": "tsgo",
         "lint": "eslint --fix",
         "format": "prettier -uwu .",
-        "test": "vitest"
+        "test": "vitest",
+        "build": "tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names src/*.ts --outdir dist"
     },
     "type": "module",
     "imports": {

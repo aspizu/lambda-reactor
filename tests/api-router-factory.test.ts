@@ -19,7 +19,7 @@ describe("router defineRestApi factory overload", () => {
     })
 
     it("accepts a factory and returns a record keyed by path", async () => {
-        const {router} = await import("#src/api")
+        const {router} = await import("#src/router")
         const fakeResource = {
             getResource: () => undefined,
             addResource: () => fakeResource,

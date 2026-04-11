@@ -1,5 +1,6 @@
 import {createHandler} from "#src/handler"
 import {method} from "#src/method"
+import {cors} from "#src/middleware"
 import {Response} from "#src/response"
 import {z} from "zod"
 
@@ -16,6 +17,7 @@ const CreatedUserSchema = z.object({
 
 export const handler = createHandler({
     POST: method()
+        .use(cors())
         .input(CreateUserSchema)
         .output(CreatedUserSchema)
         .handle(({body}) => {

@@ -1,27 +1,34 @@
 import {type Middleware} from "#src/middleware"
-import {Response} from "#src/response"
-import type {APIGatewayProxyEvent, Context} from "aws-lambda"
+import {EndpointCallback, RouteHandler} from "#src/route-handler"
 import type {ZodType} from "zod"
 
-export type EndpointCallback<TInput, TOutput> = (props: {
-    body: TInput
-    event: APIGatewayProxyEvent
-    context: Context
-}) => Promise<TOutput | Response> | TOutput | Response
+export type {EndpointCallback, RouteHandler}
 
-export interface RouteHandler {
-    readonly middlewares: Middleware[]
-    readonly bodySchema?: ZodType<unknown>
-    readonly outputSchema?: ZodType<unknown>
-    readonly callback?: (props: never) => unknown
-}
-
+/**
+ * Fluent, immutable builder for a single HTTP-method handler.
+ *
+ * Every method returns a new `Method` instance, leaving the original
+ * unchanged.  Build a method with the following chain:
+ *
+ * ```ts
+ * method().use(cors()).input(schema).output(schema).handle(async ({body}) => …)
+ * ```
+ *
+ * @typeParam TInput  - Shape of the validated request body.
+ * @typeParam TOutput - Return type of the handler callback.
+ */
 export class Method<TInput = unknown, TOutput = unknown> {
     middlewares: Middleware[] = []
     bodySchema?: ZodType<TInput>
     outputSchema?: ZodType<TOutput>
     callback?: EndpointCallback<TInput, TOutput>
 
+    /**
+     * Appends a middleware to the chain.  Middlewares are applied
+     * left-to-right after the callback resolves.
+     *
+     * @param middleware - The {@link Middleware} to append.
+     */
     use(middleware: Middleware): Method<TInput, TOutput> {
         const r = new Method<TInput, TOutput>()
         r.middlewares = [...this.middlewares, middleware]
@@ -31,6 +38,12 @@ export class Method<TInput = unknown, TOutput = unknown> {
         return r
     }
 
+    /**
+     * Attaches a Zod schema used to validate (and narrow) the request body.
+     * When validation fails, `dispatch` returns a `400` response automatically.
+     *
+     * @param bodySchema - Zod schema for the request body.
+     */
     input<U>(bodySchema: ZodType<U>): Method<U, TOutput> {
         const r = new Method<U, TOutput>()
         r.middlewares = this.middlewares
@@ -41,6 +54,12 @@ export class Method<TInput = unknown, TOutput = unknown> {
         return r
     }
 
+    /**
+     * Attaches a Zod schema that describes the expected response shape.
+     * Currently stored for documentation / code-generation purposes.
+     *
+     * @param schema - Zod schema for the response body.
+     */
     output<U>(schema: ZodType<U>): Method<TInput, U> {
         const r = new Method<TInput, U>()
         r.middlewares = this.middlewares
@@ -51,6 +70,12 @@ export class Method<TInput = unknown, TOutput = unknown> {
         return r
     }
 
+    /**
+     * Registers the async handler callback for this method.
+     *
+     * @param callback - Function that receives the validated body, the raw
+     *   Lambda event, and the Lambda context, and returns the response.
+     */
     handle(callback: EndpointCallback<TInput, TOutput>): Method<TInput, TOutput> {
         const r = new Method<TInput, TOutput>()
         r.middlewares = this.middlewares
@@ -61,6 +86,7 @@ export class Method<TInput = unknown, TOutput = unknown> {
     }
 }
 
+/** Creates a new, empty {@link Method} builder. */
 export function method(): Method {
     return new Method()
 }

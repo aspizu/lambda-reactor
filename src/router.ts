@@ -1,10 +1,15 @@
-import {readFileSync} from "fs"
-import {join} from "path"
+import {Router} from "#src/router-class"
 
-import {buildHandlers, type FunctionFactory} from "#src/build-handlers"
-import {IRestApi, LambdaIntegration} from "aws-cdk-lib/aws-apigateway"
-import {IFunction} from "aws-cdk-lib/aws-lambda"
+export {Router}
 
+/**
+ * Extracts the HTTP method names declared inside a `createHandler({…})` call
+ * by statically scanning the source text of a handler file.
+ *
+ * @param src - Raw TypeScript source of a handler module.
+ * @returns Array of upper-case HTTP method names (e.g. `["GET", "POST"]`),
+ *   or an empty array when no `createHandler` call is found.
+ */
 export function getMethods(src: string): string[] {
     const match = src.match(/createHandler\(\{([^}]*)\}\)/)
     if (!match || !match[1]) return []
@@ -14,45 +19,12 @@ export function getMethods(src: string): string[] {
         .filter(Boolean)
 }
 
-export class Router<TPaths extends string = never> {
-    srcDir: string
-    paths: TPaths[] = []
-
-    constructor(srcDir: string) {
-        this.srcDir = srcDir
-    }
-
-    route<TPath extends string>(path: TPath): Router<TPaths | TPath> {
-        const r = new Router<TPaths | TPath>(this.srcDir)
-        r.paths = [...this.paths, path as unknown as TPaths | TPath]
-        return r
-    }
-
-    defineRestApi<TApi extends IRestApi>(
-        api: TApi,
-        factory: FunctionFactory,
-    ): Record<TPaths, IFunction> {
-        const handlers = buildHandlers(this.paths, factory)
-        for (const path of this.paths) {
-            const resource = path
-                .split("/")
-                .filter(Boolean)
-                .reduce(
-                    (r, part) => r.getResource(part) ?? r.addResource(part),
-                    api.root,
-                )
-            const src = readFileSync(
-                join(process.cwd(), this.srcDir, `${path}.ts`),
-                "utf-8",
-            )
-            for (const method of getMethods(src)) {
-                resource.addMethod(method, new LambdaIntegration(handlers[path]!))
-            }
-        }
-        return handlers
-    }
-}
-
-export function router(srcDir: string = "src/api"): Router {
+/**
+ * Creates a new, empty {@link Router} builder.
+ *
+ * @param srcDir - Directory (relative to `cwd`) where handler `.ts` files
+ *   live.  Defaults to `"src"`.
+ */
+export function router(srcDir: string = "src"): Router {
     return new Router(srcDir)
 }

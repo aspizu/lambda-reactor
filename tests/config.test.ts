@@ -61,3 +61,19 @@ describe("router srcDir", () => {
         expect(router("src/api").route("/health").srcDir).toBe("src/api")
     })
 })
+
+describe("router cors", () => {
+    it("stores corsOptions via .cors()", () => {
+        const options = {allowOrigins: ["*"], allowMethods: ["GET"]}
+        expect(router().cors(options).corsOptions).toEqual(options)
+    })
+
+    it("propagates corsOptions through route chain", () => {
+        const options = {allowOrigins: ["*"], allowMethods: ["GET"]}
+        expect(router().cors(options).route("/health").corsOptions).toEqual(options)
+    })
+
+    it("has no corsOptions by default", () => {
+        expect(router().corsOptions).toBeUndefined()
+    })
+})

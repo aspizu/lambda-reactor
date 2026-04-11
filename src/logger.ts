@@ -6,11 +6,11 @@ import * as z from "zod"
  * trace when available.
  */
 export function formatError(error: Error): string {
-    let detail
+    let detail = error.message
     if (error instanceof z.ZodError) {
-        detail = z.treeifyError(error).errors.join("\n")
+        detail = z.prettifyError(error)
     }
-    return `${error.name}: ${error.message}${detail ? `\n${detail}` : ""}${error.stack ? `\n${error.stack}` : ""}`
+    return `${error.name}: ${detail}${error.stack ? `\n${error.stack.slice(error.name.length + error.message.length + 3)}` : ""}`
 }
 
 /** Writes a formatted error to `stderr` via `console.error`. */

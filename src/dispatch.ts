@@ -43,7 +43,7 @@ export async function dispatch(
         if (!parsed.success) {
             return Response.text(
                 400,
-                z.treeifyError(parsed.error).errors.join("\n"),
+                z.prettifyError(parsed.error),
             ).toAPIGatewayProxyResult()
         }
         body = parsed.data
@@ -66,7 +66,7 @@ export async function dispatch(
                 logError(parsed.error)
                 return Response.text(
                     500,
-                    z.treeifyError(parsed.error).errors.join("\n"),
+                    z.prettifyError(parsed.error),
                 ).toAPIGatewayProxyResult()
             }
             result.body = parsed.data
@@ -79,7 +79,7 @@ export async function dispatch(
             logError(parsed.error)
             return Response.text(
                 500,
-                z.treeifyError(parsed.error).errors.join("\n"),
+                z.prettifyError(parsed.error),
             ).toAPIGatewayProxyResult()
         }
         return applyMiddlewares(

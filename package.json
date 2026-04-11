@@ -1,6 +1,6 @@
 {
     "name": "lambda-reactor",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "scripts": {
         "prepare": "lefthook install",
         "check": "tsgo",
@@ -8,19 +8,16 @@
         "format": "prettier -uwu .",
         "test": "vitest",
         "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts",
-        "prepublishOnly": "bun run build"
+        "publish": "bun run build && cd dist && cp ../package.json . && npm publish"
     },
     "type": "module",
     "imports": {
         "#src/*": "./src/*.ts"
     },
-    "files": [
-        "dist"
-    ],
     "exports": {
         "./*": {
-            "types": "./dist/*.d.ts",
-            "default": "./dist/*.js"
+            "types": "./*.d.ts",
+            "default": "./*.js"
         }
     },
     "devDependencies": {

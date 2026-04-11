@@ -13,4 +13,4 @@ pre-push:
         - name: check
           run: bun run check
         - name: test
-          run: bun test -- --run
+          run: bun test

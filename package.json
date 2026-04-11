@@ -11,7 +11,10 @@
     },
     "type": "module",
     "imports": {
-        "#src/*": "./src/*.ts"
+        "#src/*": "./src/*.ts",
+        "lambda-reactor/config": "./src/config.ts",
+        "lambda-reactor/router": "./src/router.ts",
+        "lambda-reactor/method": "./src/method.ts"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

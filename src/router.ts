@@ -15,10 +15,15 @@ export function getMethods(src: string): string[] {
 }
 
 export class Router<TPaths extends string = never> {
+    srcDir: string
     paths: TPaths[] = []
 
+    constructor(srcDir: string) {
+        this.srcDir = srcDir
+    }
+
     route<TPath extends string>(path: TPath): Router<TPaths | TPath> {
-        const r = new Router<TPaths | TPath>()
+        const r = new Router<TPaths | TPath>(this.srcDir)
         r.paths = [...this.paths, path as unknown as TPaths | TPath]
         return r
     }
@@ -36,7 +41,10 @@ export class Router<TPaths extends string = never> {
                     (r, part) => r.getResource(part) ?? r.addResource(part),
                     api.root,
                 )
-            const src = readFileSync(join(process.cwd(), "src", `${path}.ts`), "utf-8")
+            const src = readFileSync(
+                join(process.cwd(), this.srcDir, `${path}.ts`),
+                "utf-8",
+            )
             for (const method of getMethods(src)) {
                 resource.addMethod(method, new LambdaIntegration(handlers[path]!))
             }
@@ -45,4 +53,6 @@ export class Router<TPaths extends string = never> {
     }
 }
 
-export const router = () => new Router()
+export function router(srcDir: string = "src/api"): Router {
+    return new Router(srcDir)
+}

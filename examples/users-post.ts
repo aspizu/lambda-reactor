@@ -5,13 +5,13 @@ import {z} from "zod"
 
 const CreateUserSchema = z.object({
     name: z.string().min(1),
-    email: z.string().email(),
+    email: z.email(),
 })
 
 const CreatedUserSchema = z.object({
     id: z.string(),
     name: z.string(),
-    email: z.string().email(),
+    email: z.email(),
 })
 
 export const handler = createHandler({

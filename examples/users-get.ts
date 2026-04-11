@@ -6,7 +6,7 @@ import {z} from "zod"
 const UserSchema = z.object({
     id: z.string(),
     name: z.string(),
-    email: z.string().email(),
+    email: z.email(),
 })
 
 export const handler = createHandler({

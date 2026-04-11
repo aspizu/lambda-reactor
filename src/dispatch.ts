@@ -1,6 +1,7 @@
 import {logError} from "#src/logger"
 import {RouteHandler} from "#src/method"
 import {Response} from "#src/response"
+import type {APIGatewayProxyResult} from "aws-lambda"
 import type {APIGatewayProxyEvent, Context} from "aws-lambda"
 import {z} from "zod"
 
@@ -11,6 +12,13 @@ function parseJson(value: unknown) {
     } catch {
         return value
     }
+}
+
+function applyMiddlewares(
+    result: APIGatewayProxyResult,
+    route: RouteHandler,
+): APIGatewayProxyResult {
+    return route.middlewares.reduce((r, middleware) => middleware(r), result)
 }
 
 export async function dispatch(
@@ -51,7 +59,7 @@ export async function dispatch(
             }
             result.body = parsed.data
         }
-        return result.toAPIGatewayProxyResult()
+        return applyMiddlewares(result.toAPIGatewayProxyResult(), route)
     }
     if (route.outputSchema) {
         const parsed = route.outputSchema.safeParse(result)
@@ -59,7 +67,10 @@ export async function dispatch(
             logError(parsed.error)
             return Response.text(500, "Internal Server Error").toAPIGatewayProxyResult()
         }
-        return Response.json(200, parsed.data).toAPIGatewayProxyResult()
+        return applyMiddlewares(
+            Response.json(200, parsed.data).toAPIGatewayProxyResult(),
+            route,
+        )
     }
-    return Response.json(200, result).toAPIGatewayProxyResult()
+    return applyMiddlewares(Response.json(200, result).toAPIGatewayProxyResult(), route)
 }

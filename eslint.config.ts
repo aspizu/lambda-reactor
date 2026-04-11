@@ -8,9 +8,11 @@ export default defineConfig(
     js.configs.recommended,
     tseslint.configs.recommended,
     {
+        languageOptions: {parserOptions: {projectService: true}},
         plugins: {perfectionist},
         rules: {
             "max-lines": ["error", 100],
+            "@typescript-eslint/no-deprecated": "error",
             "perfectionist/sort-imports": [
                 "error",
                 {

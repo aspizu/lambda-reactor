@@ -11,9 +11,8 @@ vi.mock("aws-cdk-lib/aws-apigateway", () => ({
 
 describe("router defineRestApi factory overload", () => {
     beforeEach(async () => {
-        vi.resetModules()
         const {readFileSync} = await import("fs")
-        vi.mocked(readFileSync).mockReturnValue(
+        ;(readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
             `export const handler = createHandler({GET})`,
         )
     })

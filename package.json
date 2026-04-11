@@ -7,7 +7,7 @@
         "lint": "eslint --fix",
         "format": "prettier -uwu .",
         "test": "vitest",
-        "build": "tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names src/*.ts --outdir dist"
+        "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts"
     },
     "type": "module",
     "imports": {

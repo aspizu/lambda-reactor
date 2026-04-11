@@ -41,7 +41,7 @@ describe("createHandler", () => {
         const handler = createHandler({GET: method()})
         await expect(handler(event("GET"), context)).resolves.toEqual({
             statusCode: 500,
-            body: "Internal Server Error",
+            body: "Route has no handler defined",
             headers: {"Content-Type": "text/plain; charset=utf-8"},
         })
     })

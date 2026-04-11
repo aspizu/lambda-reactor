@@ -6,11 +6,9 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 
 vi.mock("fs", () => ({readFileSync: vi.fn()}))
 
-const LambdaIntegration = vi.fn(function (this: {handler: unknown}, handler: unknown) {
-    this.handler = handler
-})
-
-vi.mock("aws-cdk-lib/aws-apigateway", () => ({LambdaIntegration}))
+vi.mock("aws-cdk-lib/aws-apigateway", () => ({
+    LambdaIntegration: vi.fn((handler: unknown) => ({handler})),
+}))
 
 class FakeResource {
     children = new Map<string, FakeResource>()
@@ -31,10 +29,10 @@ class FakeResource {
 
 describe("router defineRestApi", () => {
     beforeEach(async () => {
-        LambdaIntegration.mockClear()
-        vi.resetModules()
+        const {LambdaIntegration} = await import("aws-cdk-lib/aws-apigateway")
+        ;(LambdaIntegration as ReturnType<typeof vi.fn>).mockClear()
         const {readFileSync} = await import("fs")
-        vi.mocked(readFileSync).mockReturnValue(
+        ;(readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
             `export const handler = createHandler({GET, POST})`,
         )
     })
@@ -58,6 +56,7 @@ describe("router defineRestApi", () => {
             join(process.cwd(), "src", "/posts.ts"),
             "/posts",
         )
+        const {LambdaIntegration} = await import("aws-cdk-lib/aws-apigateway")
         expect(LambdaIntegration).toHaveBeenCalledWith(getUser)
         expect(LambdaIntegration).toHaveBeenCalledWith(createPost)
         const user = root.getResource("user")

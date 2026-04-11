@@ -1,3 +1,4 @@
+import {logError} from "#src/logger"
 import {RouteHandler} from "#src/method"
 import {Response} from "#src/response"
 import type {APIGatewayProxyEvent, Context} from "aws-lambda"
@@ -48,10 +49,9 @@ export async function dispatch(
         body = parsed.data
     }
     if (!route.callback) {
-        return Response.text(
-            500,
-            "Route has no handler defined",
-        ).toAPIGatewayProxyResult()
+        const err = new Error("Route has no handler defined")
+        logError(err)
+        return Response.text(500, err.message).toAPIGatewayProxyResult()
     }
     const cb = route.callback as (props: {
         body: unknown
@@ -63,6 +63,7 @@ export async function dispatch(
         if (route.outputSchema) {
             const parsed = route.outputSchema.safeParse(result.body)
             if (!parsed.success) {
+                logError(parsed.error)
                 return Response.text(
                     500,
                     z.treeifyError(parsed.error).errors.join("\n"),
@@ -75,6 +76,7 @@ export async function dispatch(
     if (route.outputSchema) {
         const parsed = route.outputSchema.safeParse(result)
         if (!parsed.success) {
+            logError(parsed.error)
             return Response.text(
                 500,
                 z.treeifyError(parsed.error).errors.join("\n"),

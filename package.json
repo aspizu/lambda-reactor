@@ -1,17 +1,27 @@
 {
     "name": "lambda-reactor",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scripts": {
         "prepare": "lefthook install",
         "check": "tsgo",
         "lint": "eslint --fix",
         "format": "prettier -uwu .",
         "test": "vitest",
-        "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts"
+        "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=node --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts",
+        "prepublishOnly": "bun run build"
     },
     "type": "module",
     "imports": {
         "#src/*": "./src/*.ts"
+    },
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        "./*": {
+            "types": "./dist/*.d.ts",
+            "default": "./dist/*.js"
+        }
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",

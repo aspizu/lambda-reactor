@@ -1,7 +1,8 @@
-import {type Middleware} from "#src/middleware"
-import {Response} from "#src/response"
 import type {APIGatewayProxyEvent, Context} from "aws-lambda"
 import type {ZodType} from "zod"
+
+import {type Middleware} from "./middleware"
+import {Response} from "./response"
 
 /**
  * The user-supplied handler function for a single HTTP method on a route.

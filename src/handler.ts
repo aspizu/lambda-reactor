@@ -1,10 +1,11 @@
-import {dispatch} from "#src/dispatch"
-import {isProduction} from "#src/env"
-import {formatError, logError} from "#src/logger"
-import {RouteHandler} from "#src/method"
-import {Response} from "#src/response"
 import type {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from "aws-lambda"
 import {install} from "source-map-support"
+
+import {dispatch} from "./dispatch"
+import {isProduction} from "./env"
+import {formatError, logError} from "./logger"
+import {RouteHandler} from "./method"
+import {Response} from "./response"
 
 install()
 

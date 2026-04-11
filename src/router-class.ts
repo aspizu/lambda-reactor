@@ -1,10 +1,11 @@
 import {readFileSync} from "fs"
 import {join} from "path"
 
-import {buildHandlers, type FunctionFactory} from "#src/build-handlers"
-import {getMethods} from "#src/router"
 import {type CorsOptions, IRestApi, LambdaIntegration} from "aws-cdk-lib/aws-apigateway"
 import {IFunction} from "aws-cdk-lib/aws-lambda"
+
+import {buildHandlers, type FunctionFactory} from "./build-handlers"
+import {getMethods} from "./router"
 
 /**
  * Immutable CDK router that maps route paths to Lambda-backed API Gateway

@@ -1,10 +1,10 @@
-import {logError} from "#src/logger"
-import {RouteHandler} from "#src/method"
-import {Response} from "#src/response"
 import type {APIGatewayProxyEvent, Context} from "aws-lambda"
 import {z} from "zod"
 
+import {logError} from "./logger"
+import {RouteHandler} from "./method"
 import {applyMiddlewares} from "./middleware"
+import {Response} from "./response"
 
 /**
  * Executes a single {@link RouteHandler} for an incoming Lambda proxy event.

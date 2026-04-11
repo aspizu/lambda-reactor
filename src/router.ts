@@ -1,6 +1,4 @@
-import {Router} from "#src/router-class"
-
-export {Router}
+import {Router} from "./router-class"
 
 /**
  * Extracts the HTTP method names declared inside a `createHandler({…})` call

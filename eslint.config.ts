@@ -8,7 +8,12 @@ export default defineConfig(
     js.configs.recommended,
     tseslint.configs.recommended,
     {
-        languageOptions: {parserOptions: {projectService: true}},
+        languageOptions: {
+            parserOptions: {
+                project: ["./tsconfig.build.json", "./tsconfig.node.json"],
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
         plugins: {perfectionist},
         rules: {
             "max-lines": ["error", 100],

@@ -1,6 +1,7 @@
-import {type Middleware} from "#src/middleware"
-import {EndpointCallback, RouteHandler} from "#src/route-handler"
 import type {ZodType} from "zod"
+
+import {type Middleware} from "./middleware"
+import {EndpointCallback, RouteHandler} from "./route-handler"
 
 export type {EndpointCallback, RouteHandler}
 

@@ -1,5 +1,5 @@
 use absolute imports like `"#src/router"`
-run `git add . && git commit -m '' # only run pre-commit hook` to ensure code quality
+run `.git/hooks/pre-commit && bun run check` to ensure code quality
 whenever you add a feature or fix a bug, add tests and documentation for it (jsdoc)
 you may not suppress eslint rules or typescript errors
 functions must either be 100% pure, or be 100% side-effectful

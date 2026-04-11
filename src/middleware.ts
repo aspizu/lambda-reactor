@@ -10,6 +10,24 @@ import {RouteHandler} from "./route-handler"
 export type Middleware = (result: APIGatewayProxyResult) => APIGatewayProxyResult
 
 /**
+ * Unprefixed CORS header names accepted by {@link cors}.
+ * Each key is prefixed with `"Access-Control-"` in the response.
+ */
+export type CorsHeaders = Partial<
+    Record<
+        | "Allow-Origin"
+        | "Allow-Methods"
+        | "Allow-Headers"
+        | "Allow-Credentials"
+        | "Expose-Headers"
+        | "Max-Age"
+        | "Request-Headers"
+        | "Request-Method",
+        string
+    >
+>
+
+/**
  * Creates a middleware that injects CORS response headers.
  *
  * Each key in `headers` is prefixed with `"Access-Control-"` before being
@@ -19,7 +37,7 @@ export type Middleware = (result: APIGatewayProxyResult) => APIGatewayProxyResul
  * @param headers - Map of unprefixed CORS header names to their values.
  *   Defaults to an empty object (no CORS headers added).
  */
-export function cors(headers: Record<string, string> = {}): Middleware {
+export function cors(headers: CorsHeaders = {}): Middleware {
     return (result) => {
         const corsHeaders: Record<string, string> = {}
         for (const [key, value] of Object.entries(headers)) {

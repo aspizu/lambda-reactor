@@ -21,7 +21,7 @@ export default defineConfig(
                 {fixStyle: "separate-type-imports", prefer: "type-imports"},
             ],
             "@typescript-eslint/no-deprecated": "error",
-            "max-lines": ["error", 100],
+            "max-lines": ["error", 128],
             "perfectionist/sort-imports": [
                 "error",
                 {

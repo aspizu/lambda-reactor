@@ -2,7 +2,7 @@ import {readFileSync} from "fs"
 import {join} from "path"
 
 import {Duration} from "aws-cdk-lib"
-import type {RestApi} from "aws-cdk-lib/aws-apigateway"
+import type {IResource, RestApi} from "aws-cdk-lib/aws-apigateway"
 import {
     type CorsOptions,
     LambdaIntegration,
@@ -14,10 +14,8 @@ import type {CORS} from "./cors"
 
 function _toCorsOptions(cors: CORS): CorsOptions {
     const opts = cors._toCorsOptions()
-    return {
-        ...opts,
-        maxAge: opts.maxAge !== undefined ? Duration.seconds(opts.maxAge) : undefined,
-    }
+    const maxAge = opts.maxAge !== undefined ? Duration.seconds(opts.maxAge) : undefined
+    return {...opts, maxAge}
 }
 
 function _getMethods(src: string): string[] {
@@ -26,66 +24,75 @@ function _getMethods(src: string): string[] {
     return match.split(",").map((s) => s.trim())
 }
 
-export type FunctionFactory = (entry: string, id: string) => IFunction
+export interface FunctionFactory<TPaths extends string = never> {
+    (path: TPaths, entry: string): IFunction
+}
+export interface ResourceFactory<TPaths extends string = never> {
+    (api: RestApi, path: TPaths, part: string): IResource
+}
 
 export class Router<TPaths extends string = never> {
     private _cors?: CORS
     private _paths: string[] = []
     private _srcDir: string
+    private _functionFactory: FunctionFactory<TPaths>
+    private _resourceFactory: ResourceFactory<TPaths>
 
     /**
      * @param opts.cors   - Optional CORS configuration applied to every route.
-     * @param opts.srcDir - Directory that contains the per-route source files
-     *   read by {@link defineRestApi} to discover HTTP methods.  Defaults to
-     *   `"src/api"`.
+     * @param opts.srcDir - Directory that contains the per-route source files. Defaults to `"src/api"`.
+     * @param opts.functionFactory - {@link FunctionFactory} used to build Lambda functions.
+     * @param opts.resourceFactory - {@link ResourceFactory} used to build API Gateway resources.
      */
-    constructor(opts: {cors?: CORS; srcDir?: string} = {}) {
+    constructor(opts: {
+        cors?: CORS
+        srcDir?: string
+        functionFactory: FunctionFactory<TPaths>
+        resourceFactory: ResourceFactory<TPaths>
+    }) {
         this._cors = opts.cors
         this._srcDir = opts.srcDir ?? "src/api"
+        this._functionFactory = opts.functionFactory
+        this._resourceFactory = opts.resourceFactory
     }
 
     /**
      * Wires all registered routes into the given API Gateway REST API.
      *
      * @param api     - The CDK `RestApi` to attach resources and methods to.
-     * @param factory - {@link FunctionFactory} used to build Lambda functions.
      * @returns A record mapping each route path to its {@link IFunction}.
      */
-    defineRestApi(api: RestApi, factory: FunctionFactory): Record<TPaths, IFunction> {
-        const handlers = Object.fromEntries(
-            this._paths.map((path) => [
-                path,
-                factory(join(this._srcDir, `${path}.ts`), path),
-            ]),
-        ) as Record<TPaths, IFunction>
-        for (const [path, fn] of Object.entries(handlers) as [string, IFunction][]) {
-            const resource = path
-                .split("/")
-                .filter(Boolean)
-                .reduce(
-                    (r, part) => r.getResource(part) ?? r.addResource(part),
-                    api.root,
-                )
-            if (this._cors) {
-                resource.addCorsPreflight(_toCorsOptions(this._cors))
-                api.addGatewayResponse("Default4xxCors", {
-                    type: ResponseType.DEFAULT_4XX,
-                    responseHeaders: this._cors._toGatewayResponseHeaders(),
-                })
-                api.addGatewayResponse("Default5xxCors", {
-                    type: ResponseType.DEFAULT_5XX,
-                    responseHeaders: this._cors._toGatewayResponseHeaders(),
-                })
-            }
+    defineRestApi(api: RestApi): Record<TPaths, IFunction> {
+        if (this._cors) {
+            api.addGatewayResponse("Default4xxCors", {
+                type: ResponseType.DEFAULT_4XX,
+                responseHeaders: this._cors._toGatewayResponseHeaders(),
+            })
+            api.addGatewayResponse("Default5xxCors", {
+                type: ResponseType.DEFAULT_5XX,
+                responseHeaders: this._cors._toGatewayResponseHeaders(),
+            })
+        }
+        const handlers = this._paths.map((path) => {
+            const entry = join(this._srcDir, `${path}.ts`)
+            const fn = this._functionFactory(path as TPaths, entry)
+            return [path, fn] as [TPaths, IFunction]
+        })
+        for (const [path, fn] of handlers) {
+            const parts = path.split("/").filter(Boolean)
+            const resource = parts.reduce((r, part) => {
+                return r.getResource(part) ?? this._resourceFactory(api, path, part)
+            }, api.root)
             const src = readFileSync(join(this._srcDir, `${path}.ts`), "utf-8")
             for (const method of _getMethods(src)) {
                 resource.addMethod(method, new LambdaIntegration(fn))
-                if (this._cors) {
-                    resource.addMethod("OPTIONS", new LambdaIntegration(fn))
-                }
+            }
+            if (this._cors) {
+                resource.addCorsPreflight(_toCorsOptions(this._cors))
+                resource.addMethod("OPTIONS", new LambdaIntegration(fn))
             }
         }
-        return handlers
+        return Object.fromEntries(handlers) as Record<TPaths, IFunction>
     }
 
     /**

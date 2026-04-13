@@ -8,6 +8,6 @@ export class UsersStack extends Stack {
     constructor(scope: Stack, id: string, props?: StackProps) {
         super(scope, id, props)
         const api = new RestApi(this, "UsersRestApi")
-        router(this).route("/user").route("/user/{user_id}").defineRestApi(api)
+        router().route("/user").route("/user/{user_id}").defineRestApi(scope, api)
     }
 }

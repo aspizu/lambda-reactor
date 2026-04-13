@@ -9,6 +9,7 @@ import {
     ResponseType,
 } from "aws-cdk-lib/aws-apigateway"
 import type {IFunction} from "aws-cdk-lib/aws-lambda"
+import type {Construct} from "constructs"
 
 import type {CORS} from "./cors"
 
@@ -25,7 +26,7 @@ function _getMethods(src: string): string[] {
 }
 
 export interface FunctionFactory<TPaths extends string = never> {
-    (path: TPaths, entry: string): IFunction
+    (scope: Construct, path: TPaths, entry: string): IFunction
 }
 export interface ResourceFactory<TPaths extends string = never> {
     (api: RestApi, path: TPaths, part: string): IResource
@@ -62,7 +63,7 @@ export class Router<TPaths extends string = never> {
      * @param api     - The CDK `RestApi` to attach resources and methods to.
      * @returns A record mapping each route path to its {@link IFunction}.
      */
-    defineRestApi(api: RestApi): Record<TPaths, IFunction> {
+    defineRestApi(scope: Construct, api: RestApi): Record<TPaths, IFunction> {
         if (this._cors) {
             api.addGatewayResponse("Default4xxCors", {
                 type: ResponseType.DEFAULT_4XX,
@@ -75,7 +76,7 @@ export class Router<TPaths extends string = never> {
         }
         const handlers = this._paths.map((path) => {
             const entry = join(this._srcDir, `${path}.ts`)
-            const fn = this._functionFactory(path as TPaths, entry)
+            const fn = this._functionFactory(scope, path as TPaths, entry)
             return [path, fn] as [TPaths, IFunction]
         })
         for (const [path, fn] of handlers) {

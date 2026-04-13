@@ -14,7 +14,7 @@ export default () =>
                 logRetention: RetentionDays.ONE_WEEK,
             })
         },
-        resourceFactory: (api, _path, part) => {
-            return api.root.addResource(part)
+        methodFactory: (resource, _path, method, integration) => {
+            return resource.addMethod(method, integration)
         },
     })

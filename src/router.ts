@@ -2,7 +2,7 @@ import {readFileSync} from "fs"
 import {join} from "path"
 
 import {Duration} from "aws-cdk-lib"
-import type {IResource, RestApi} from "aws-cdk-lib/aws-apigateway"
+import type {Integration, IResource, Method, RestApi} from "aws-cdk-lib/aws-apigateway"
 import {
     type CorsOptions,
     LambdaIntegration,
@@ -31,30 +31,38 @@ export interface FunctionFactory<TPaths extends string = never> {
 export interface ResourceFactory<TPaths extends string = never> {
     (api: RestApi, path: TPaths, part: string): IResource
 }
+export interface MethodFactory<TPaths extends string = never> {
+    (
+        resource: IResource,
+        path: TPaths,
+        method: string,
+        integration: Integration,
+    ): Method
+}
 
 export class Router<TPaths extends string = never> {
     private _cors?: CORS
     private _paths: string[] = []
     private _srcDir: string
     private _functionFactory: FunctionFactory<TPaths>
-    private _resourceFactory: ResourceFactory<TPaths>
+    private _methodFactory: MethodFactory<TPaths>
 
     /**
      * @param opts.cors   - Optional CORS configuration applied to every route.
      * @param opts.srcDir - Directory that contains the per-route source files. Defaults to `"src/api"`.
      * @param opts.functionFactory - {@link FunctionFactory} used to build Lambda functions.
-     * @param opts.resourceFactory - {@link ResourceFactory} used to build API Gateway resources.
+     * @param opts.methodFactory - {@link MethodFactory} used to build API Gateway methods. Defaults to `resource.addMethod(method, integration)`.
      */
     constructor(opts: {
         cors?: CORS
         srcDir?: string
         functionFactory: FunctionFactory<TPaths>
-        resourceFactory: ResourceFactory<TPaths>
+        methodFactory: MethodFactory<TPaths>
     }) {
         this._cors = opts.cors
         this._srcDir = opts.srcDir ?? "src/api"
         this._functionFactory = opts.functionFactory
-        this._resourceFactory = opts.resourceFactory
+        this._methodFactory = opts.methodFactory
     }
 
     /**
@@ -82,15 +90,25 @@ export class Router<TPaths extends string = never> {
         for (const [path, fn] of handlers) {
             const parts = path.split("/").filter(Boolean)
             const resource = parts.reduce((r, part) => {
-                return r.getResource(part) ?? this._resourceFactory(api, path, part)
+                return r.getResource(part) ?? r.addResource(part)
             }, api.root)
             const src = readFileSync(join(this._srcDir, `${path}.ts`), "utf-8")
             for (const method of _getMethods(src)) {
-                resource.addMethod(method, new LambdaIntegration(fn))
+                this._methodFactory(
+                    resource,
+                    path as TPaths,
+                    method,
+                    new LambdaIntegration(fn),
+                )
             }
             if (this._cors) {
                 resource.addCorsPreflight(_toCorsOptions(this._cors))
-                resource.addMethod("OPTIONS", new LambdaIntegration(fn))
+                this._methodFactory(
+                    resource,
+                    path as TPaths,
+                    "OPTIONS",
+                    new LambdaIntegration(fn),
+                )
             }
         }
         return Object.fromEntries(handlers) as Record<TPaths, IFunction>

@@ -103,12 +103,6 @@ export class Router<TPaths extends string = never> {
             }
             if (this._cors) {
                 resource.addCorsPreflight(_toCorsOptions(this._cors))
-                this._methodFactory(
-                    resource,
-                    path as TPaths,
-                    "OPTIONS",
-                    new LambdaIntegration(fn),
-                )
             }
         }
         return Object.fromEntries(handlers) as Record<TPaths, IFunction>

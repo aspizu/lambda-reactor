@@ -8,25 +8,12 @@ import type {APIGatewayProxyResult} from "aws-lambda"
  * factory methods {@link Response.text} and {@link Response.json}.
  */
 export class Response {
-    status?: number
-    body?: unknown
-    text?: string
-    headers?: Record<string, string>
+    private _body?: unknown
+    private _headers?: Record<string, string>
+    private _status?: number
+    private _text?: string
 
     private constructor() {}
-
-    /**
-     * Creates a plain-text response.
-     *
-     * @param status - HTTP status code.
-     * @param text - Response body as a plain string.
-     */
-    static text(status: number, text: string) {
-        const r = new Response()
-        r.status = status
-        r.text = text
-        return r
-    }
 
     /**
      * Creates a JSON response.
@@ -36,8 +23,21 @@ export class Response {
      */
     static json(status: number, body: unknown) {
         const r = new Response()
-        r.status = status
-        r.body = body
+        r._status = status
+        r._body = body
+        return r
+    }
+
+    /**
+     * Creates a plain-text response.
+     *
+     * @param status - HTTP status code.
+     * @param text - Response body as a plain string.
+     */
+    static text(status: number, text: string) {
+        const r = new Response()
+        r._status = status
+        r._text = text
         return r
     }
 
@@ -49,38 +49,27 @@ export class Response {
      */
     header(name: string, value: string): Response {
         const r = new Response()
-        if (this.status !== undefined) r.status = this.status
-        if (this.body !== undefined) r.body = this.body
-        if (this.text !== undefined) r.text = this.text
-        r.headers = {...this.headers, [name]: value}
+        if (this._status !== undefined) r._status = this._status
+        if (this._body !== undefined) r._body = this._body
+        if (this._text !== undefined) r._text = this._text
+        r._headers = {...this._headers, [name]: value}
         return r
     }
 
-    /**
-     * Serialises this `Response` into the shape expected by the AWS Lambda
-     * proxy integration.
-     *
-     * - When constructed via {@link Response.json} the body is JSON-encoded
-     *   and `Content-Type` is set to `application/json; charset=utf-8`.
-     * - When constructed via {@link Response.text} the body is returned as-is
-     *   and `Content-Type` is set to `text/plain; charset=utf-8`.
-     * - Additional headers set via {@link Response.header} are merged last and
-     *   therefore take precedence over the defaults above.
-     */
-    toAPIGatewayProxyResult(): APIGatewayProxyResult {
+    _toAPIGatewayProxyResult(): APIGatewayProxyResult {
         return {
-            statusCode: this.status ?? 200,
             body:
-                this.text === undefined ?
-                    (JSON.stringify(this.body) ?? "null")
-                :   this.text,
+                this._text === undefined ?
+                    (JSON.stringify(this._body) ?? "null")
+                :   this._text,
             headers: {
                 "Content-Type":
-                    this.text === undefined ?
+                    this._text === undefined ?
                         "application/json; charset=utf-8"
                     :   "text/plain; charset=utf-8",
-                ...this.headers,
+                ...this._headers,
             },
+            statusCode: this._status ?? 200,
         }
     }
 }

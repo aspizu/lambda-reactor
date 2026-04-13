@@ -1,38 +1,38 @@
 import type {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from "aws-lambda"
 import {install} from "source-map-support"
 
-import {dispatch} from "./dispatch"
-import {isProduction} from "./env"
-import {formatError, logError} from "./logger"
-import {RouteHandler} from "./method"
+import {_dispatch} from "./_dispatch"
+import {_isProduction} from "./_env"
+import {_formatError, _logError} from "./_logger"
+import type {_RouteHandler} from "./_route-handler"
 import {Response} from "./response"
 
 install()
 
 /**
  * Creates an AWS Lambda handler function from a map of HTTP-method names to
- * {@link RouteHandler} instances.
+ * {@link _RouteHandler} instances.
  *
  * The returned handler:
  * - Returns `405 Method Not Allowed` (with an `Allow` header) for any HTTP
  *   method not present in `routes`.
- * - Delegates matching requests to {@link dispatch}.
+ * - Delegates matching requests to {@link _dispatch}.
  * - Catches any `Error` thrown by `dispatch`, logs it, and returns
  *   `500 Internal Server Error`.  In non-production environments the error
  *   message and stack trace are included in the response body.
  * - Re-throws non-`Error` throwables so they propagate to the Lambda runtime.
  *
  * @param routes - Map of upper-case HTTP method names (e.g. `"GET"`, `"POST"`)
- *   to their corresponding {@link RouteHandler}.
+ *   to their corresponding {@link _RouteHandler}.
  *
  * @example
  * ```ts
- * export const handler = createHandler({
- *   GET: method().handle(async () => Response.json(200, {ok: true})),
- * })
+ * const GET = method().handle(async () => Response.json(200, {ok: true}))
+ *
+ * export const handler = createHandler({GET})
  * ```
  */
-export function createHandler<T extends Record<string, RouteHandler>>(routes: T) {
+export function createHandler<T extends Record<string, _RouteHandler>>(routes: T) {
     return async (
         event: APIGatewayProxyEvent,
         context: Context,
@@ -41,17 +41,17 @@ export function createHandler<T extends Record<string, RouteHandler>>(routes: T)
         if (!route) {
             return Response.text(405, "Method Not Allowed")
                 .header("Allow", Object.keys(routes).join(", "))
-                .toAPIGatewayProxyResult()
+                ._toAPIGatewayProxyResult()
         }
         try {
-            return await dispatch(route, event, context)
+            return await _dispatch(route, event, context)
         } catch (error) {
             if (error instanceof Error) {
-                logError(error)
+                _logError(error)
                 return Response.text(
                     500,
-                    isProduction() ? "Internal Server Error" : formatError(error),
-                ).toAPIGatewayProxyResult()
+                    _isProduction() ? "Internal Server Error" : _formatError(error),
+                )._toAPIGatewayProxyResult()
             }
             throw error
         }

@@ -1,5 +1,5 @@
 import {createHandler} from "#src/handler"
-import {method} from "#src/method"
+import {Method} from "#src/method"
 import type {APIGatewayProxyEvent, Context} from "aws-lambda"
 import {afterEach, describe, expect, it, vi} from "vitest"
 
@@ -11,16 +11,16 @@ function event(httpMethod: string): APIGatewayProxyEvent {
     return {
         body: null,
         headers: {},
-        multiValueHeaders: {},
         httpMethod,
         isBase64Encoded: false,
+        multiValueHeaders: {},
+        multiValueQueryStringParameters: null,
         path: "/",
         pathParameters: null,
         queryStringParameters: null,
-        multiValueQueryStringParameters: null,
-        stageVariables: null,
-        resource: "/",
         requestContext: {} as APIGatewayProxyEvent["requestContext"],
+        resource: "/",
+        stageVariables: null,
     }
 }
 
@@ -33,7 +33,7 @@ describe("createHandler error logging", () => {
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
         const boom = new Error("boom")
         const handler = createHandler({
-            GET: method().handle(() => {
+            GET: new Method().handle(() => {
                 throw boom
             }),
         })
@@ -48,7 +48,7 @@ describe("createHandler error logging", () => {
         process.env["NODE_ENV"] = "production"
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
         const handler = createHandler({
-            GET: method().handle(() => {
+            GET: new Method().handle(() => {
                 throw new Error("secret details")
             }),
         })

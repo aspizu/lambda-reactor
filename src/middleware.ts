@@ -1,6 +1,6 @@
 import type {APIGatewayProxyResult} from "aws-lambda"
 
-import {RouteHandler} from "./route-handler"
+import type {_RouteHandler} from "./_route-handler"
 
 /**
  * A pure function that receives an {@link APIGatewayProxyResult} and returns
@@ -9,51 +9,12 @@ import {RouteHandler} from "./route-handler"
  */
 export type Middleware = (result: APIGatewayProxyResult) => APIGatewayProxyResult
 
-/**
- * Unprefixed CORS header names accepted by {@link cors}.
- * Each key is prefixed with `"Access-Control-"` in the response.
- */
-export type CorsHeaders = Partial<
-    Record<
-        | "Allow-Origin"
-        | "Allow-Methods"
-        | "Allow-Headers"
-        | "Allow-Credentials"
-        | "Expose-Headers"
-        | "Max-Age"
-        | "Request-Headers"
-        | "Request-Method",
-        string
-    >
->
-
-/**
- * Creates a middleware that injects CORS response headers.
- *
- * Each key in `headers` is prefixed with `"Access-Control-"` before being
- * merged into the response, so passing `{"Allow-Origin": "*"}` produces the
- * `Access-Control-Allow-Origin: *` header.
- *
- * @param headers - Map of unprefixed CORS header names to their values.
- *   Defaults to an empty object (no CORS headers added).
- */
-export function cors(headers: CorsHeaders = {}): Middleware {
-    return (result) => {
-        const corsHeaders: Record<string, string> = {}
-        for (const [key, value] of Object.entries(headers)) {
-            corsHeaders[`Access-Control-${key}`] = value
-        }
-        return {...result, headers: {...result.headers, ...corsHeaders}}
-    }
-}
-
-/**
- * Folds all middlewares registered on `route` over `result`, applying them
- * left-to-right, and returns the final {@link APIGatewayProxyResult}.
- */
-export function applyMiddlewares(
+export function _applyMiddlewares(
     result: APIGatewayProxyResult,
-    route: RouteHandler,
+    route: _RouteHandler,
 ): APIGatewayProxyResult {
-    return route.middlewares.reduce((r, middleware) => middleware(r), result)
+    return route.middlewares.reduce(
+        (r: APIGatewayProxyResult, middleware: Middleware) => middleware(r),
+        result,
+    )
 }

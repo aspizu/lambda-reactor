@@ -9,13 +9,13 @@ export default defineConfig({
         },
     },
     test: {
-        globals: true,
+        coverage: {
+            include: ["src/**/*.ts"],
+            provider: "v8",
+        },
         environment: "node",
+        globals: true,
         include: ["tests/**/*.test.{ts,tsx}"],
         setupFiles: ["./vitest.setup.ts"],
-        coverage: {
-            provider: "v8",
-            include: ["src/**/*.ts"],
-        },
     },
 })

@@ -1,79 +1,46 @@
-import {method} from "#src/method"
-import {cors} from "#src/middleware"
-import {router} from "#src/router"
+import {createHandler} from "#src/handler"
+import {Method} from "#src/method"
+import type {APIGatewayProxyEvent, Context} from "aws-lambda"
 import {describe, expect, it} from "vitest"
 import {z} from "zod"
 
-describe("method middlewares", () => {
-    it("has empty middlewares by default", () => {
-        expect(method().middlewares).toEqual([])
+function event(httpMethod: string, body: unknown = null): APIGatewayProxyEvent {
+    return {
+        body: body !== null ? JSON.stringify(body) : null,
+        headers: {},
+        httpMethod,
+        isBase64Encoded: false,
+        multiValueHeaders: {},
+        multiValueQueryStringParameters: null,
+        path: "/",
+        pathParameters: null,
+        queryStringParameters: null,
+        requestContext: {} as APIGatewayProxyEvent["requestContext"],
+        resource: "/",
+        stageVariables: null,
+    }
+}
+
+const context = {} as Context
+
+describe("Method", () => {
+    it("returns 400 on invalid input", async () => {
+        const handler = createHandler({
+            POST: new Method()
+                .input(z.object({x: z.string()}))
+                .handle(({body}) => body),
+        })
+        const result = await handler(event("POST"), context)
+        expect(result.statusCode).toBe(400)
     })
 
-    it("adds middleware via .use()", () => {
-        const m = cors({"Allow-Origin": "*"})
-        expect(method().use(m).middlewares).toHaveLength(1)
-    })
-
-    it("accumulates multiple middlewares", () => {
-        const m1 = cors({"Allow-Origin": "*"})
-        const m2 = cors({"Allow-Methods": "GET"})
-        expect(method().use(m1).use(m2).middlewares).toHaveLength(2)
-    })
-
-    it("propagates middlewares through input chain", () => {
-        const m = cors({"Allow-Origin": "*"})
-        expect(
-            method()
-                .use(m)
-                .input(z.object({x: z.string()})).middlewares,
-        ).toHaveLength(1)
-    })
-
-    it("propagates middlewares through output chain", () => {
-        const m = cors({"Allow-Origin": "*"})
-        expect(
-            method()
-                .use(m)
-                .output(z.object({x: z.string()})).middlewares,
-        ).toHaveLength(1)
-    })
-
-    it("propagates middlewares through handle chain", () => {
-        const m = cors({"Allow-Origin": "*"})
-        expect(
-            method()
-                .use(m)
-                .handle(async () => "ok").middlewares,
-        ).toHaveLength(1)
-    })
-})
-
-describe("router srcDir", () => {
-    it("defaults srcDir to src", () => {
-        expect(router().srcDir).toBe("src")
-    })
-
-    it("accepts custom srcDir", () => {
-        expect(router("src/api").srcDir).toBe("src/api")
-    })
-
-    it("propagates srcDir through route chain", () => {
-        expect(router("src/api").route("/health").srcDir).toBe("src/api")
-    })
-})
-
-describe("router cors", () => {
-    it("stores corsOptions via .cors()", () => {
-        const options = {allowOrigins: ["*"], allowMethods: ["GET"]}
-        expect(router().cors(options).corsOptions).toEqual(options)
-    })
-
-    it("propagates corsOptions through route chain", () => {
-        const options = {allowOrigins: ["*"], allowMethods: ["GET"]}
-        expect(router().cors(options).route("/health").corsOptions).toEqual(options)
-    })
-
-    it("has no corsOptions by default", () => {
-        expect(router().corsOptions).toBeUndefined()
+    it("returns response from handler", async () => {
+        const handler = createHandler({
+            POST: new Method()
+                .input(z.object({x: z.string()}))
+                .handle(({body}) => ({x: body.x})),
+        })
+        const result = await handler(event("POST", {x: "hello"}), context)
+        expect(result.statusCode).toBe(200)
     })
 })

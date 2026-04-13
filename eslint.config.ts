@@ -16,19 +16,23 @@ export default defineConfig(
         },
         plugins: {perfectionist},
         rules: {
-            "max-lines": ["error", 100],
+            "@typescript-eslint/consistent-type-imports": [
+                "error",
+                {fixStyle: "separate-type-imports", prefer: "type-imports"},
+            ],
             "@typescript-eslint/no-deprecated": "error",
+            "max-lines": ["error", 100],
             "perfectionist/sort-imports": [
                 "error",
                 {
-                    type: "alphabetical",
-                    order: "asc",
                     groups: [
                         "builtin",
                         "external",
                         "internal",
                         ["parent", "sibling", "index"],
                     ],
+                    order: "asc",
+                    type: "alphabetical",
                 },
             ],
         },

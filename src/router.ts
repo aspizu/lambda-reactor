@@ -32,28 +32,24 @@ export interface FunctionFactory<
     (scope: Construct, path: TPaths, entry: string): TFunction
 }
 
-export interface MethodFactory<
-    TPaths extends string = never,
-    TMethod extends Method = Method,
-> {
+export interface MethodFactory<TPaths extends string = never> {
     (
         resource: IResource,
         path: TPaths,
         method: string,
         integration: Integration,
-    ): TMethod
+    ): Method
 }
 
 export class Router<
     TPaths extends string = never,
     TFunction extends IFunction = IFunction,
-    TMethod extends Method = Method,
 > {
     private _cors?: CORS
     private _paths: string[] = []
     private _srcDir: string
     private _functionFactory: FunctionFactory<TPaths, TFunction>
-    private _methodFactory: MethodFactory<TPaths, TMethod>
+    private _methodFactory: MethodFactory<TPaths>
 
     /**
      * @param opts.cors   - Optional CORS configuration applied to every route.
@@ -65,7 +61,7 @@ export class Router<
         cors?: CORS
         srcDir?: string
         functionFactory: FunctionFactory<TPaths, TFunction>
-        methodFactory: MethodFactory<TPaths, TMethod>
+        methodFactory: MethodFactory<TPaths>
     }) {
         this._cors = opts.cors
         this._srcDir = opts.srcDir ?? "src/api"
@@ -121,8 +117,8 @@ export class Router<
      *
      * @param path - Route path string (e.g. `"/users"`).  Must correspond to a handler file at `<srcDir>/<path>.ts`.
      */
-    route<TPath extends string>(path: TPath): Router<TPath | TPaths> {
+    route<TPath extends string>(path: TPath): Router<TPath | TPaths, TFunction> {
         this._paths = [...this._paths, path]
-        return this as unknown as Router<TPath | TPaths>
+        return this as unknown as Router<TPath | TPaths, TFunction>
     }
 }

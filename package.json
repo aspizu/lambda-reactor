@@ -1,6 +1,6 @@
 {
     "name": "lambda-reactor",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "scripts": {
         "prepare": "lefthook install",
         "check": "tsgo",

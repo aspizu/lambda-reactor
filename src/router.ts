@@ -25,27 +25,35 @@ function _getMethods(src: string): string[] {
     return match.split(",").map((s) => s.trim())
 }
 
-export interface FunctionFactory<TPaths extends string = never> {
-    (scope: Construct, path: TPaths, entry: string): IFunction
+export interface FunctionFactory<
+    TPaths extends string = never,
+    TFunction extends IFunction = IFunction,
+> {
+    (scope: Construct, path: TPaths, entry: string): TFunction
 }
-export interface ResourceFactory<TPaths extends string = never> {
-    (api: RestApi, path: TPaths, part: string): IResource
-}
-export interface MethodFactory<TPaths extends string = never> {
+
+export interface MethodFactory<
+    TPaths extends string = never,
+    TMethod extends Method = Method,
+> {
     (
         resource: IResource,
         path: TPaths,
         method: string,
         integration: Integration,
-    ): Method
+    ): TMethod
 }
 
-export class Router<TPaths extends string = never> {
+export class Router<
+    TPaths extends string = never,
+    TFunction extends IFunction = IFunction,
+    TMethod extends Method = Method,
+> {
     private _cors?: CORS
     private _paths: string[] = []
     private _srcDir: string
-    private _functionFactory: FunctionFactory<TPaths>
-    private _methodFactory: MethodFactory<TPaths>
+    private _functionFactory: FunctionFactory<TPaths, TFunction>
+    private _methodFactory: MethodFactory<TPaths, TMethod>
 
     /**
      * @param opts.cors   - Optional CORS configuration applied to every route.
@@ -56,8 +64,8 @@ export class Router<TPaths extends string = never> {
     constructor(opts: {
         cors?: CORS
         srcDir?: string
-        functionFactory: FunctionFactory<TPaths>
-        methodFactory: MethodFactory<TPaths>
+        functionFactory: FunctionFactory<TPaths, TFunction>
+        methodFactory: MethodFactory<TPaths, TMethod>
     }) {
         this._cors = opts.cors
         this._srcDir = opts.srcDir ?? "src/api"
@@ -71,7 +79,7 @@ export class Router<TPaths extends string = never> {
      * @param api     - The CDK `RestApi` to attach resources and methods to.
      * @returns A record mapping each route path to its {@link IFunction}.
      */
-    defineRestApi(scope: Construct, api: RestApi): Record<TPaths, IFunction> {
+    defineRestApi(scope: Construct, api: RestApi): Record<TPaths, TFunction> {
         if (this._cors) {
             api.addGatewayResponse("Default4xxCors", {
                 type: ResponseType.DEFAULT_4XX,
@@ -85,7 +93,7 @@ export class Router<TPaths extends string = never> {
         const handlers = this._paths.map((path) => {
             const entry = join(this._srcDir, `${path}.ts`)
             const fn = this._functionFactory(scope, path as TPaths, entry)
-            return [path, fn] as [TPaths, IFunction]
+            return [path, fn] as [TPaths, TFunction]
         })
         for (const [path, fn] of handlers) {
             const parts = path.split("/").filter(Boolean)
@@ -105,7 +113,7 @@ export class Router<TPaths extends string = never> {
                 resource.addCorsPreflight(_toCorsOptions(this._cors))
             }
         }
-        return Object.fromEntries(handlers) as Record<TPaths, IFunction>
+        return Object.fromEntries(handlers) as Record<TPaths, TFunction>
     }
 
     /**
